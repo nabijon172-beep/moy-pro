@@ -55,7 +55,7 @@ polars-runtime-32==1.44.2
 propcache==0.5.2
 psutil==7.2.2
 pyclipper==1.4.0
-pydantic==2.13.5
+pydantic<2.6,>=2.4.1
 pydantic_core==2.46.5
 pydub==0.25.1
 Pygments==2.21.0
