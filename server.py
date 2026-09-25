@@ -227,4 +227,15 @@ def usta_qosh(b: Usta, request: Request):
             raise HTTPException(400, "Bunday login allaqachon bor")
         user_qosh(c, l, b.parol, "usta")
     return {"ok": True}
+
+
+@app.post("/api/tozala")
+def tarix_tozala(request: Request):
+    ega(request)
+    with db() as c:
+        c.execute("delete from xizmat")
+        c.execute("delete from mijoz")
+    return {"ok": True}
+
+
 import ombor
