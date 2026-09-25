@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1B222C"><title>Moy servisi</title>
+<style>
+:root{--ink:#1B222C;--bg:#EDEEF0;--card:#fff;--mute:#5F6875;--oil:#B86A00;--line:#D6D9DE;--btn:#1B222C;--btnt:#fff}
+@media(prefers-color-scheme:dark){:root{--ink:#EDEEF0;--bg:#12151B;--card:#1B2029;--mute:#9AA3B0;--oil:#F2B441;--line:#2C3340;--btn:#F2B441;--btnt:#12151B}}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 "Segoe UI",system-ui,sans-serif;padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;background:var(--bg);padding:calc(12px + env(safe-area-inset-top)) 16px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--line);z-index:2}
+header b{font-size:1.1rem}header span{color:var(--mute);font-size:.85rem}
+main{max-width:640px;margin:0 auto;padding:16px}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+h2{font-size:1rem;margin:0 0 10px}
+.f{display:grid;gap:8px}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+input{width:100%;min-width:0;font:inherit;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+input[type=checkbox]{width:20px;height:20px;padding:0}
+.chk{display:flex;align-items:center;gap:8px}
+input:focus,button:focus-visible,.btn:focus-visible{outline:2px solid var(--oil);outline-offset:1px}
+button,.btn{display:inline-block;text-decoration:none;text-align:center;font:inherit;font-weight:600;padding:12px 16px;border:0;border-radius:8px;background:var(--btn);color:var(--btnt);cursor:pointer}
+.sec{background:transparent!important;color:var(--ink)!important;border:1px solid var(--line)!important}
+.plate{display:inline-flex;border:2px solid #1B222C;border-radius:6px;background:#fff;color:#1B222C;font-weight:700;letter-spacing:.08em;overflow:hidden;font-size:1.05rem}
+.plate i{background:#1B4FA0;color:#fff;font-size:.6rem;padding:0 6px;font-style:normal;display:flex;align-items:center}
+.plate b{padding:3px 10px}
+.car{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;cursor:pointer}
+.mj{border-top:1px solid var(--line)}.mj:first-child{border-top:0}
+small{display:block;color:var(--mute)}
+.acts{display:flex;flex-direction:column;gap:6px}.acts .btn{padding:8px 12px}
+.tr{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
+.oil{color:var(--oil)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid .card{margin:0}.grid .n{font-size:1.5rem;font-weight:700}
+.empty{color:var(--mute);padding:8px 0}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:var(--mute);border-radius:0;padding:14px 2px;font-size:.85rem}
+nav button.on{color:var(--ink);box-shadow:inset 0 3px 0 var(--oil)}
+#login{max-width:360px;margin:16vh auto;padding:16px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;display:none;z-index:5;max-width:90%}
+@media(min-width:800px){body{padding:0 0 0 180px}nav{top:0;right:auto;width:180px;flex-direction:column;border-top:0;border-right:1px solid var(--line);padding-top:60px}nav button{text-align:left;padding:14px 20px;font-size:1rem}nav button.on{box-shadow:inset 3px 0 0 var(--oil)}}
+</style></head><body>
+<div id="login" hidden><div class="card"><h2>Tizimga kirish</h2><div class="f">
+<input id="lg" placeholder="Login" autocomplete="username"><input id="parol" type="password" placeholder="Parol" autocomplete="current-password"><button id="kir">Kirish</button></div></div></div>
+<div id="app" hidden>
+<header><b id="hd">Moy servisi</b><span id="bg"></span><button class="sec" id="chiq" style="padding:6px 10px">Chiqish</button></header>
+<main>
+<section id="s-yangi" class="on"><div class="card"><h2>Moy almashtirildi</h2><div class="f">
+<input id="f-raqam" placeholder="Mashina raqami: 90G617JA" autocapitalize="characters">
+<div class="two"><input id="f-rusum" placeholder="Rusum (Nexia, Cobalt)"><input id="f-ism" placeholder="Mijoz ismi"></div>
+<input id="f-tel" type="tel" placeholder="Telefon: +998 90 123 45 67">
+<div class="two"><input id="f-km" type="number" inputmode="numeric" placeholder="Spidometr, km"><input id="f-sum" type="number" inputmode="numeric" placeholder="Summa, so'm"></div>
+<input id="f-moy" list="moylar" placeholder="Moy turi: 5W-30"><datalist id="moylar"><option value="5W-30"><option value="5W-40"><option value="10W-40"><option value="0W-20"></datalist>
+<label class="chk"><input type="checkbox" id="f-filtr"> Filtr ham almashtirildi</label>
+<button id="f-saqla">Saqlash</button></div></div></section>
+<section id="s-mj"><div class="card"><input id="q" placeholder="Raqam, ism yoki telefon bo'yicha qidirish"><div id="mj-list"></div></div></section>
+<section id="s-esl"><div class="card"><h2>Muddati yaqin mijozlar</h2><div id="e-list"></div></div></section>
+<section id="s-hs"><div id="hs"></div></section>
+<section id="s-sz"><div class="card"><h2>Servis sozlamalari</h2><div class="f">
+<input id="s-servis" placeholder="Servis nomi"><div class="two"><input id="s-km" type="number" placeholder="Oraliq, km"><input id="s-kun" type="number" placeholder="Oraliq, kun"></div>
+<button id="s-saqla">Saqlash</button></div></div>
+<div class="card"><h2>Ustalar</h2><div id="s-ustalar"></div><div class="f" style="margin-top:10px"><div class="two"><input id="u-login" placeholder="Usta logini"><input id="u-parol" type="password" placeholder="Parol (6+ belgi)"></div><button id="u-qosh" class="sec">Usta qo'shish</button></div></div></section>
+</main>
+<nav><button data-t="yangi" class="on">Yangi</button><button data-t="mj">Mijozlar</button><button data-t="esl">Eslatma</button><button data-t="hs" class="ega">Hisobot</button><button data-t="sz" class="ega">Sozlama</button></nav>
+</div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),pul=n=>Number(n||0).toLocaleString('ru-RU')+" so'm";
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const plate=r=>`<span class="plate"><i>UZ</i><b>${esc(r)}</b></span>`;
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',3200)}
+function show(ok){$('#login').hidden=ok;$('#app').hidden=!ok}
+async function api(u,b){
+  const r=await fetch('/api/'+u,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:{});
+  if(r.status==401&&u!='login'){show(false);throw 0}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw (typeof j.detail=='string'?j.detail:'Ma\'lumotni to\'g\'ri kiriting');return j}
+const act=async f=>{try{await f()}catch(e){if(e)toast(e)}};
+const kun=(d,b)=>{const n=Math.round((new Date(d)-new Date(b))/864e5);return n<0?(-n)+" kun o'tib ketgan":n==0?"bugun":n+" kun qoldi"};
+async function yangila(){
+  const h=await api('holat');show(true);
+  $('#hd').textContent=h.servis;$('#bg').textContent='Bugun: '+h.bugun_soni+' ta';
+  document.querySelectorAll('.ega').forEach(e=>e.hidden=h.rol!='ega');
+  $('#e-list').innerHTML=h.yaqin.length?h.yaqin.map(x=>`<div class="mj"><div class="car" style="cursor:default"><div>${plate(x.raqam)}<small>${esc(x.ism)||'Ismi yozilmagan'}, ${esc(x.rusum)}</small><small>Muddat: ${x.keyingi_sana} (${kun(x.keyingi_sana,h.bugun)}), ${x.keyingi_km} km</small></div><div class="acts">${x.telefon?`<a class="btn sec" href="tel:${esc(x.telefon)}">Qo'ng'iroq</a><a class="btn sec" href="sms:${esc(x.telefon)}?body=${encodeURIComponent('Hurmatli mijoz, '+x.raqam+' mashinangizda moy almashtirish vaqti yaqinlashdi.')}">SMS</a>`:''}</div></div></div>`).join(''):'<div class="empty">Yaqin 14 kunda muddati keladigan mijoz yo\'q.</div>'}
+async function qidir(){
+  const l=await api('mijoz?q='+encodeURIComponent($('#q').value));
+  $('#mj-list').innerHTML=l.length?l.map(m=>`<div class="mj" data-r="${esc(m.raqam)}"><div class="car"><div>${plate(m.raqam)}<small>${esc(m.ism)} ${esc(m.rusum)}</small></div><small>${m.soni} marta</small></div><div class="hist"></div></div>`).join(''):'<div class="empty">Mijoz topilmadi.</div>'}
+async function hisobot(){
+  const h=await api('hisobot');
+  $('#hs').innerHTML=`<div class="grid"><div class="card"><small>Bugun</small><div class="n oil">${pul(h.bugun.tushum)}</div><small>${h.bugun.soni} ta xizmat</small></div><div class="card"><small>Shu oy</small><div class="n">${pul(h.oy.tushum)}</div><small>${h.oy.soni} ta xizmat</small></div></div><div class="card" style="margin-top:12px"><h2>Ustalar (shu oy)</h2>${h.ustalar.map(u=>`<div class="tr"><span>${esc(u.usta)}, ${u.soni} ta</span><b>${pul(u.tushum)}</b></div>`).join('')||'<div class="empty">Ma\'lumot yo\'q.</div>'}</div><a class="btn" style="display:block" href="/api/eksport">Excel uchun yuklab olish (CSV)</a>`}
+async function sozlamaOl(){
+  const j=await api('sozlama');
+  $('#s-servis').value=j.sozlama.servis;$('#s-km').value=j.sozlama.oraliq_km;$('#s-kun').value=j.sozlama.oraliq_kun;
+  $('#s-ustalar').innerHTML=j.ustalar.length?j.ustalar.map(u=>`<div class="tr"><span>${esc(u)}</span></div>`).join(''):'<div class="empty">Usta hali qo\'shilmagan.</div>'}
+$('#kir').onclick=()=>act(async()=>{await api('login',{login:$('#lg').value,parol:$('#parol').value});$('#parol').value='';await yangila()});
+$('#parol').onkeydown=e=>{if(e.key=='Enter')$('#kir').click()};
+$('#chiq').onclick=()=>act(async()=>{await api('chiqish',{});show(false)});
+$('#f-raqam').onchange=()=>act(async()=>{try{const j=await api('mijoz/'+encodeURIComponent($('#f-raqam').value));
+  if(!$('#f-rusum').value)$('#f-rusum').value=j.mijoz.rusum;if(!$('#f-ism').value)$('#f-ism').value=j.mijoz.ism;if(!$('#f-tel').value)$('#f-tel').value=j.mijoz.telefon}catch(e){}});
+$('#f-saqla').onclick=()=>act(async()=>{
+  const j=await api('xizmat',{raqam:$('#f-raqam').value,rusum:$('#f-rusum').value,ism:$('#f-ism').value,telefon:$('#f-tel').value,km:+$('#f-km').value,moy:$('#f-moy').value,filtr:$('#f-filtr').checked,summa:+$('#f-sum').value});
+  ['#f-raqam','#f-rusum','#f-ism','#f-tel','#f-km','#f-sum','#f-moy'].forEach(s=>$(s).value='');$('#f-filtr').checked=false;
+  toast('Saqlandi. Keyingi almashtirish: '+j.keyingi_km+' km yoki '+j.keyingi_sana);await yangila()});
+$('#q').oninput=()=>act(qidir);
+$('#mj-list').onclick=e=>act(async()=>{
+  const m=e.target.closest('.mj');if(!m)return;const h=m.querySelector('.hist');if(h.innerHTML){h.innerHTML='';return}
+  const j=await api('mijoz/'+m.dataset.r);
+  h.innerHTML=`<small>Telefon: ${esc(j.mijoz.telefon)||'yozilmagan'}</small>`+j.tarix.map(x=>`<div class="tr"><span>${x.sana.slice(0,10)}, ${x.km} km, ${esc(x.moy)}${x.filtr?', filtr':''}</span><b class="oil">${pul(x.summa)}</b></div>`).join('')});
+$('#s-saqla').onclick=()=>act(async()=>{await api('sozlama',{servis:$('#s-servis').value,oraliq_km:+$('#s-km').value,oraliq_kun:+$('#s-kun').value});toast('Saqlandi');await yangila()});
+$('#u-qosh').onclick=()=>act(async()=>{await api('usta',{login:$('#u-login').value,parol:$('#u-parol').value});$('#u-login').value='';$('#u-parol').value='';toast('Usta qo\'shildi');await sozlamaOl()});
+document.querySelector('nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
+  document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));e.target.classList.add('on');$('#s-'+t).classList.add('on');
+  act(async()=>{if(t=='mj')await qidir();if(t=='hs')await hisobot();if(t=='sz')await sozlamaOl();if(t=='esl')await yangila()})};
+act(yangila).then(()=>{if($('#app').hidden)show(false)});setInterval(()=>{if(!$('#app').hidden)act(yangila)},60000);
+   </script><script src="/ombor.js"></script></body></html>
