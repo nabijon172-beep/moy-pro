@@ -83,6 +83,18 @@ class Usta(BaseModel):
     login: str
     parol: str
 
+class MijozTahrir(BaseModel):
+    raqam: str
+    rusum: str = ""
+    ism: str = ""
+    telefon: str = ""
+
+class Raqam(BaseModel):
+    raqam: str
+
+class UstaLogin(BaseModel):
+    login: str
+
 
 @app.get("/")
 def bosh():
@@ -153,6 +165,44 @@ def mijoz_tarix(raqam: str, request: Request):
             from xizmat x where x.raqam=? order by x.id desc
         """, (r,))]
     return {"mijoz": dict(m), "tarix": tarix}
+
+
+@app.post("/api/mijoz/tahrirla")
+def mijoz_tahrirla(b: MijozTahrir, request: Request):
+    kim(request)
+    r = norm(b.raqam)
+    if len(r) < 5:
+        raise HTTPException(400, "Mashina raqami noto'g'ri")
+    with db() as c:
+        c.execute("""insert into mijoz(raqam,rusum,ism,telefon) values(?,?,?,?)
+                     on conflict(raqam) do update set rusum=excluded.rusum, ism=excluded.ism, telefon=excluded.telefon""",
+                  (r, b.rusum.strip(), b.ism.strip(), b.telefon.strip()))
+    return {"ok": True}
+
+
+@app.post("/api/mijoz/ochir")
+def mijoz_ochir(b: Raqam, request: Request):
+    ega(request)
+    r = norm(b.raqam)
+    with db() as c:
+        n = c.execute("delete from mijoz where raqam=?", (r,)).rowcount
+    if not n:
+        raise HTTPException(404, "Mijoz topilmadi")
+    return {"ok": True}
+
+
+@app.post("/api/usta/ochir")
+def usta_ochir(b: UstaLogin, request: Request):
+    ega(request)
+    l = b.login.strip().lower()
+    with db() as c:
+        row = c.execute("select rol from users where login=?", (l,)).fetchone()
+        if not row:
+            raise HTTPException(404, "Foydalanuvchi topilmadi")
+        if row["rol"] == "ega":
+            raise HTTPException(400, "Egasini o'chirib bo'lmaydi")
+        c.execute("delete from users where login=?", (l,))
+    return {"ok": True}
 
 
 @app.post("/api/xizmat")

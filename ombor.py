@@ -49,6 +49,43 @@ class Parol(BaseModel):
     yangi: str
 
 
+class XizmatTahrir(BaseModel):
+    id: int
+    km: int
+    moy: str = ""
+    filtr: bool = False
+    summa: int
+
+class XizmatId(BaseModel):
+    id: int
+
+
+@app.post("/api/xizmat/tahrirla")
+def xizmat_tahrirla(b: XizmatTahrir, request: Request):
+    ega(request)
+    if b.km <= 0 or b.summa < 0:
+        raise HTTPException(400, "Km va summani to'g'ri kiriting")
+    with db() as c:
+        n = c.execute("update xizmat set km=?, moy=?, filtr=?, summa=? where id=?",
+                      (b.km, b.moy.strip(), int(b.filtr), b.summa, b.id)).rowcount
+    if not n:
+        raise HTTPException(404, "Xizmat topilmadi")
+    return {"ok": True}
+
+
+@app.post("/api/xizmat/ochir")
+def xizmat_ochir(b: XizmatId, request: Request):
+    ega(request)
+    with db() as c:
+        for s in c.execute("select tovar_id, miqdor from sarf where xizmat_id=?", (b.id,)).fetchall():
+            c.execute("update tovar set qoldiq=qoldiq+? where id=?", (s["miqdor"], s["tovar_id"]))
+        c.execute("delete from sarf where xizmat_id=?", (b.id,))
+        n = c.execute("delete from xizmat where id=?", (b.id,)).rowcount
+    if not n:
+        raise HTTPException(404, "Xizmat topilmadi")
+    return {"ok": True}
+
+
 @app.get("/ombor.js")
 def ombor_js():
     return FileResponse(os.path.join(PAPKA, "ombor.js"), media_type="application/javascript")

@@ -86,6 +86,7 @@ nav button.on{color:var(--ink);box-shadow:inset 0 3px 0 var(--oil)}
 <div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),pul=n=>Number(n||0).toLocaleString('ru-RU')+" so'm";
+let ROL='';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const plate=r=>`<span class="plate"><i>UZ</i><b>${esc(r)}</b></span>`;
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',3200)}
@@ -107,11 +108,13 @@ function chart(rows,label){
 async function yangila(){
   const h=await api('holat');show(true);
   $('#hd').textContent=h.servis;$('#bg').textContent='Bugun: '+h.bugun_soni+' ta';
+  ROL=h.rol;
   document.querySelectorAll('.ega').forEach(e=>e.hidden=h.rol!='ega');
   $('#e-list').innerHTML=h.yaqin.length?h.yaqin.map(x=>`<div class="mj"><div class="car" style="cursor:default"><div>${plate(x.raqam)}<small>${esc(x.ism)||'Ismi yozilmagan'}, ${esc(x.rusum)}</small><small>Muddat: ${x.keyingi_sana} (${kun(x.keyingi_sana,h.bugun)}), ${x.keyingi_km} km</small></div><div class="acts">${x.telefon?`<a class="btn sec" href="tel:${esc(x.telefon)}">Qo'ng'iroq</a><a class="btn sec" href="sms:${esc(x.telefon)}?body=${encodeURIComponent('Hurmatli mijoz, '+x.raqam+' mashinangizda moy almashtirish vaqti yaqinlashdi.')}">SMS</a>`:''}</div></div></div>`).join(''):'<div class="empty">Yaqin 14 kunda muddati keladigan mijoz yo\'q.</div>'}
 async function qidir(){
   const l=await api('mijoz?q='+encodeURIComponent($('#q').value));
-  $('#mj-list').innerHTML=l.length?l.map(m=>`<div class="mj" data-r="${esc(m.raqam)}"><div class="car"><div>${plate(m.raqam)}<small>${esc(m.ism)} ${esc(m.rusum)}</small></div><small>${m.soni} marta</small></div><div class="hist"></div></div>`).join(''):'<div class="empty">Mijoz topilmadi.</div>'}
+  $('#mj-list').innerHTML=l.length?l.map(m=>`<div class="mj" data-r="${esc(m.raqam)}"><div class="car"><div>${plate(m.raqam)}<small>${esc(m.ism)} ${esc(m.rusum)}</small></div><div style="display:flex;align-items:center;gap:10px"><small>${m.soni} marta</small><a href="#" class="mj-e">Tahrirlash</a><a href="#" class="mj-o ega" style="color:#e5484d">O'chirish</a></div></div><div class="hist"></div></div>`).join(''):'<div class="empty">Mijoz topilmadi.</div>'
+  document.querySelectorAll('.ega').forEach(e=>e.hidden=ROL!='ega')}
 async function hisobot(){
   const h=await api('hisobot');
   $('#hs').innerHTML=`<div class="grid"><div class="card accent"><small>Bugun</small><div class="n oil">${pul(h.bugun.tushum)}</div><small>${h.bugun.soni} ta xizmat</small></div><div class="card accent"><small>Shu oy</small><div class="n">${pul(h.oy.tushum)}</div><small>${h.oy.soni} ta xizmat</small></div></div><div class="card" style="margin-top:12px"><h2>Oxirgi 14 kun</h2>${chart(h.kunlik,'sana')}</div><div class="card" style="margin-top:12px"><h2>Oylar bo'yicha</h2>${chart(h.oylik,'oy')}</div><div class="card" style="margin-top:12px"><h2>Ustalar (shu oy)</h2>${h.ustalar.map(u=>`<div class="tr"><span>${esc(u.usta)}, ${u.soni} ta</span><b>${pul(u.tushum)}</b></div>`).join('')||'<div class="empty">Ma\'lumot yo\'q.</div>'}</div><a class="btn" style="display:block;margin-top:12px" href="/api/eksport">Excel uchun yuklab olish (CSV)</a><div class="card danger-zone" style="margin-top:12px"><h2>Tarixni tozalash</h2><p>Barcha xizmat tarixi va mijozlar ro'yxati butunlay o'chadi. Bu amalni ortga qaytarib bo'lmaydi.</p><button class="btn danger" onclick="tozala()">Hammasini tozalash</button></div>`}
@@ -121,7 +124,7 @@ async function tozala(){
 async function sozlamaOl(){
   const j=await api('sozlama');
   $('#s-servis').value=j.sozlama.servis;$('#s-km').value=j.sozlama.oraliq_km;$('#s-kun').value=j.sozlama.oraliq_kun;
-  $('#s-ustalar').innerHTML=j.ustalar.length?j.ustalar.map(u=>`<div class="tr"><span>${esc(u)}</span></div>`).join(''):'<div class="empty">Usta hali qo\'shilmagan.</div>'}
+  $('#s-ustalar').innerHTML=j.ustalar.length?j.ustalar.map(u=>`<div class="tr"><span>${esc(u)}</span><a href="#" class="u-o" data-l="${esc(u)}" style="color:#e5484d">O'chirish</a></div>`).join(''):'<div class="empty">Usta hali qo\'shilmagan.</div>'}
 $('#kir').onclick=()=>act(async()=>{await api('login',{login:$('#lg').value,parol:$('#parol').value});$('#parol').value='';await yangila()});
 $('#parol').onkeydown=e=>{if(e.key=='Enter')$('#kir').click()};
 $('#chiq').onclick=()=>act(async()=>{await api('chiqish',{});show(false)});
@@ -132,12 +135,41 @@ $('#f-saqla').onclick=()=>act(async()=>{
   ['#f-raqam','#f-rusum','#f-ism','#f-tel','#f-km','#f-sum','#f-moy'].forEach(s=>$(s).value='');$('#f-filtr').checked=false;
   toast('Saqlandi. Keyingi almashtirish: '+j.keyingi_km+' km yoki '+j.keyingi_sana);await yangila()});
 $('#q').oninput=()=>act(qidir);
-$('#mj-list').onclick=e=>act(async()=>{
-  const m=e.target.closest('.mj');if(!m)return;const h=m.querySelector('.hist');if(h.innerHTML){h.innerHTML='';return}
-  const j=await api('mijoz/'+m.dataset.r);
-  h.innerHTML=`<small>Telefon: ${esc(j.mijoz.telefon)||'yozilmagan'}</small>`+j.tarix.map(x=>`<div class="tr"><span>${x.sana.slice(0,10)}, ${x.km} km, ${esc(x.moy)}${x.filtr?', filtr':''}${x.tovarlar?'<br><small>'+esc(x.tovarlar)+'</small>':''}</span><b class="oil">${pul(x.summa)}</b></div>`).join('')});
+$('#mj-list').onclick=e=>{
+  const t=e.target;
+  if(t.classList.contains('mj-e'))return act(async()=>{e.preventDefault();
+    const r=t.closest('.mj').dataset.r,cur=await api('mijoz/'+r);
+    const ism=prompt('Mijoz ismi:',cur.mijoz.ism||'');if(ism===null)return;
+    const tel=prompt('Telefon:',cur.mijoz.telefon||'');if(tel===null)return;
+    const rusum=prompt('Rusum:',cur.mijoz.rusum||'');if(rusum===null)return;
+    await api('mijoz/tahrirla',{raqam:r,ism,telefon:tel,rusum});
+    toast('Mijoz yangilandi');await qidir()});
+  if(t.classList.contains('mj-o'))return act(async()=>{e.preventDefault();
+    const r=t.closest('.mj').dataset.r;
+    if(!confirm(r+" mijozining kontakt ma'lumotlari o'chirilsinmi? (Xizmat tarixi saqlanib qoladi)"))return;
+    await api('mijoz/ochir',{raqam:r});toast('Mijoz o\'chirildi');await qidir()});
+  if(t.classList.contains('xz-e'))return act(async()=>{e.preventDefault();
+    const km=prompt('Probeg, km:',t.dataset.km);if(km===null||isNaN(+km))return;
+    const moy=prompt('Moy turi:',t.dataset.moy);if(moy===null)return;
+    const filtr=confirm('Filtr ham almashtirilganmi?\nOK = ha, Bekor qilish = yo\'q');
+    const summa=prompt("Summa, so'm:",t.dataset.summa);if(summa===null||isNaN(+summa))return;
+    await api('xizmat/tahrirla',{id:+t.dataset.id,km:+km,moy,filtr,summa:+summa});
+    toast('Xizmat yozuvi yangilandi');await qidir()});
+  if(t.classList.contains('xz-o'))return act(async()=>{e.preventDefault();
+    if(!confirm('Bu xizmat yozuvi butunlay o\'chirilsinmi? (Ombordan sarflangan tovar qaytariladi)'))return;
+    await api('xizmat/ochir',{id:+t.dataset.id});toast('Xizmat yozuvi o\'chirildi');await qidir()});
+  act(async()=>{
+    const m=t.closest('.mj');if(!m)return;const h=m.querySelector('.hist');if(h.innerHTML){h.innerHTML='';return}
+    const j=await api('mijoz/'+m.dataset.r);
+    h.innerHTML=`<small>Telefon: ${esc(j.mijoz.telefon)||'yozilmagan'}</small>`+j.tarix.map(x=>`<div class="tr"><span>${x.sana.slice(0,10)}, ${x.km} km, ${esc(x.moy)}${x.filtr?', filtr':''}${x.tovarlar?'<br><small>'+esc(x.tovarlar)+'</small>':''}</span><span style="display:flex;align-items:center;gap:10px"><b class="oil">${pul(x.summa)}</b><a href="#" class="xz-e" data-id="${x.id}" data-km="${x.km}" data-moy="${esc(x.moy)}" data-filtr="${x.filtr}" data-summa="${x.summa}">Tahrirlash</a><a href="#" class="xz-o ega" data-id="${x.id}" style="color:#e5484d">O'chirish</a></span></div>`).join('');
+    document.querySelectorAll('.ega').forEach(el=>el.hidden=ROL!='ega')})};
 $('#s-saqla').onclick=()=>act(async()=>{await api('sozlama',{servis:$('#s-servis').value,oraliq_km:+$('#s-km').value,oraliq_kun:+$('#s-kun').value});toast('Saqlandi');await yangila()});
 $('#u-qosh').onclick=()=>act(async()=>{await api('usta',{login:$('#u-login').value,parol:$('#u-parol').value});$('#u-login').value='';$('#u-parol').value='';toast('Usta qo\'shildi');await sozlamaOl()});
+$('#s-ustalar').onclick=e=>{
+  if(!e.target.classList.contains('u-o'))return;e.preventDefault();
+  act(async()=>{
+    if(!confirm(e.target.dataset.l+" o'chirilsinmi?"))return;
+    await api('usta/ochir',{login:e.target.dataset.l});toast('Usta o\'chirildi');await sozlamaOl()})};
 $('#sms-hammaga').onclick=()=>act(async()=>{
   const j=await api('sms/yubor',{});
   toast(j.soni?`${j.yuborildi}/${j.soni} ta mijozga SMS yuborildi`:'Eslatma kerak bo\'lgan mijoz yo\'q');
