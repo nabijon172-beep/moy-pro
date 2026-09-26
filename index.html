@@ -134,7 +134,7 @@ $('#q').oninput=()=>act(qidir);
 $('#mj-list').onclick=e=>act(async()=>{
   const m=e.target.closest('.mj');if(!m)return;const h=m.querySelector('.hist');if(h.innerHTML){h.innerHTML='';return}
   const j=await api('mijoz/'+m.dataset.r);
-  h.innerHTML=`<small>Telefon: ${esc(j.mijoz.telefon)||'yozilmagan'}</small>`+j.tarix.map(x=>`<div class="tr"><span>${x.sana.slice(0,10)}, ${x.km} km, ${esc(x.moy)}${x.filtr?', filtr':''}</span><b class="oil">${pul(x.summa)}</b></div>`).join('')});
+  h.innerHTML=`<small>Telefon: ${esc(j.mijoz.telefon)||'yozilmagan'}</small>`+j.tarix.map(x=>`<div class="tr"><span>${x.sana.slice(0,10)}, ${x.km} km, ${esc(x.moy)}${x.filtr?', filtr':''}${x.tovarlar?'<br><small>'+esc(x.tovarlar)+'</small>':''}</span><b class="oil">${pul(x.summa)}</b></div>`).join('')});
 $('#s-saqla').onclick=()=>act(async()=>{await api('sozlama',{servis:$('#s-servis').value,oraliq_km:+$('#s-km').value,oraliq_kun:+$('#s-kun').value});toast('Saqlandi');await yangila()});
 $('#u-qosh').onclick=()=>act(async()=>{await api('usta',{login:$('#u-login').value,parol:$('#u-parol').value});$('#u-login').value='';$('#u-parol').value='';toast('Usta qo\'shildi');await sozlamaOl()});
 $('#sms-hammaga').onclick=()=>act(async()=>{

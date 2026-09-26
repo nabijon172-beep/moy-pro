@@ -194,16 +194,22 @@ def chek(xid: int, request: Request):
         if not x:
             raise HTTPException(404, "Xizmat topilmadi")
         servis = sozlama_ol_c(c)["servis"]
+        sarflar = c.execute("""select t.nom, s.miqdor, t.birlik from sarf s join tovar t on t.id=s.tovar_id
+                               where s.xizmat_id=?""", (xid,)).fetchall()
     e = lambda s: html.escape(str(s or ""))
     jami = ("%d" % x["summa"])
     jami = "{:,}".format(x["summa"]).replace(",", " ")
     sana = x["sana"][:16].replace("T", " ")
     filtr = ", filtr almashtirildi" if x["filtr"] else ""
+    qismlar = ""
+    if sarflar:
+        qatorlar = "".join(f'<div class="r"><span>{e(r["nom"])}</span><span>{r["miqdor"]} {e(r["birlik"])}</span></div>' for r in sarflar)
+        qismlar = f'<hr><p><b>Ishlatilgan ehtiyot qismlar:</b></p>{qatorlar}'
     sahifa = f"""<!doctype html><meta charset="utf-8"><title>Chek</title>
 <style>body{{font:14px monospace;max-width:300px;margin:16px auto}}h3,p{{margin:4px 0}}hr{{border:0;border-top:1px dashed #000}}.r{{display:flex;justify-content:space-between}}</style>
 <h3>{e(servis)}</h3><p>{e(sana)}</p><hr>
 <p>Mashina: {e(x["raqam"])} {e(x["rusum"])}</p><p>Mijoz: {e(x["ism"])}</p><p>Km: {x["km"]}</p>
-<p>Moy: {e(x["moy"])}{filtr}</p><hr>
+<p>Moy: {e(x["moy"])}{filtr}</p>{qismlar}<hr>
 <div class="r"><b>Jami:</b><b>{jami} so'm</b></div><hr>
 <p>Keyingi almashtirish: {x["keyingi_km"]} km yoki {e(x["keyingi_sana"])}</p><p>Rahmat!</p>
 <script>print()</script>"""

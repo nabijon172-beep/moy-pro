@@ -145,7 +145,13 @@ def mijoz_tarix(raqam: str, request: Request):
         m = c.execute("select * from mijoz where raqam=?", (r,)).fetchone()
         if not m:
             raise HTTPException(404, "Mijoz topilmadi")
-        tarix = [dict(x) for x in c.execute("select * from xizmat where raqam=? order by id desc", (r,))]
+        tarix = [dict(x) for x in c.execute("""
+            select x.*, (
+                select group_concat(t.nom || ' (' || s.miqdor || ' ' || t.birlik || ')', ', ')
+                from sarf s join tovar t on t.id = s.tovar_id where s.xizmat_id = x.id
+            ) as tovarlar
+            from xizmat x where x.raqam=? order by x.id desc
+        """, (r,))]
     return {"mijoz": dict(m), "tarix": tarix}
 
 
