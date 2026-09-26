@@ -180,7 +180,15 @@ def hisobot(request: Request):
             return {"soni": r["n"], "tushum": r["t"]}
         ustalar = [dict(r) for r in c.execute(
             "select usta, count(*) soni, sum(summa) tushum from xizmat where sana >= ? group by usta order by tushum desc", (oy,))]
-        return {"bugun": yig(kun), "oy": yig(oy), "ustalar": ustalar}
+        bosh14 = (now - timedelta(days=13)).strftime("%Y-%m-%d")
+        kunlik = [dict(r) for r in c.execute(
+            "select substr(sana,1,10) sana, coalesce(sum(summa),0) tushum, count(*) soni from xizmat "
+            "where sana >= ? group by sana order by sana", (bosh14,))]
+        bosh6 = (now - timedelta(days=182)).strftime("%Y-%m-01")
+        oylik = [dict(r) for r in c.execute(
+            "select substr(sana,1,7) oy, coalesce(sum(summa),0) tushum, count(*) soni from xizmat "
+            "where sana >= ? group by oy order by oy", (bosh6,))]
+        return {"bugun": yig(kun), "oy": yig(oy), "ustalar": ustalar, "kunlik": kunlik, "oylik": oylik}
 
 
 @app.get("/api/eksport")
@@ -239,3 +247,4 @@ def tarix_tozala(request: Request):
 
 
 import ombor
+import eslatma

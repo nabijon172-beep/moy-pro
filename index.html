@@ -67,7 +67,7 @@ nav button.on{color:var(--ink);box-shadow:inset 0 3px 0 var(--oil)}
 <label class="chk"><input type="checkbox" id="f-filtr"> Filtr ham almashtirildi</label>
 <button id="f-saqla">Saqlash</button></div></div></section>
 <section id="s-mj"><div class="card"><input id="q" placeholder="Raqam, ism yoki telefon bo'yicha qidirish"><div id="mj-list"></div></div></section>
-<section id="s-esl"><div class="card"><h2>Muddati yaqin mijozlar</h2><div id="e-list"></div></div></section>
+<section id="s-esl"><div class="card"><h2>Muddati yaqin mijozlar</h2><button class="sec ega" id="sms-hammaga" style="margin-bottom:10px;width:100%">SMS yuborish (hammasiga)</button><div id="e-list"></div></div></section>
 <section id="s-hs"><div id="hs"></div></section>
 <section id="s-sz"><div class="card"><h2>Servis sozlamalari</h2><div class="f">
 <input id="s-servis" placeholder="Servis nomi"><div class="two"><input id="s-km" type="number" placeholder="Oraliq, km"><input id="s-kun" type="number" placeholder="Oraliq, kun"></div>
@@ -96,6 +96,13 @@ async function api(u,b){
   if(!r.ok)throw (typeof j.detail=='string'?j.detail:'Ma\'lumotni to\'g\'ri kiriting');return j}
 const act=async f=>{try{await f()}catch(e){if(e)toast(e)}};
 const kun=(d,b)=>{const n=Math.round((new Date(d)-new Date(b))/864e5);return n<0?(-n)+" kun o'tib ketgan":n==0?"bugun":n+" kun qoldi"};
+function chart(rows,label){
+  if(!rows.length)return '<div class="empty">Ma\'lumot yo\'q.</div>';
+  const max=Math.max(...rows.map(r=>r.tushum),1),w=Math.max(220,rows.length*36),h=110;
+  const bars=rows.map((r,i)=>{const bh=Math.max(2,Math.round(r.tushum/max*84));const x=i*36+6;
+    return `<rect x="${x}" y="${94-bh}" width="24" height="${bh}" rx="3" fill="var(--oil)"><title>${esc(r[label])}: ${pul(r.tushum)}</title></rect>`+
+           `<text x="${x+12}" y="106" font-size="9" fill="var(--mute)" text-anchor="middle">${esc((r[label]||'').slice(label=='oy'?5:8))}</text>`}).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:110px" preserveAspectRatio="xMinYMin meet">${bars}</svg>`}
 async function yangila(){
   const h=await api('holat');show(true);
   $('#hd').textContent=h.servis;$('#bg').textContent='Bugun: '+h.bugun_soni+' ta';
@@ -106,7 +113,7 @@ async function qidir(){
   $('#mj-list').innerHTML=l.length?l.map(m=>`<div class="mj" data-r="${esc(m.raqam)}"><div class="car"><div>${plate(m.raqam)}<small>${esc(m.ism)} ${esc(m.rusum)}</small></div><small>${m.soni} marta</small></div><div class="hist"></div></div>`).join(''):'<div class="empty">Mijoz topilmadi.</div>'}
 async function hisobot(){
   const h=await api('hisobot');
-  $('#hs').innerHTML=`<div class="grid"><div class="card accent"><small>Bugun</small><div class="n oil">${pul(h.bugun.tushum)}</div><small>${h.bugun.soni} ta xizmat</small></div><div class="card accent"><small>Shu oy</small><div class="n">${pul(h.oy.tushum)}</div><small>${h.oy.soni} ta xizmat</small></div></div><div class="card" style="margin-top:12px"><h2>Ustalar (shu oy)</h2>${h.ustalar.map(u=>`<div class="tr"><span>${esc(u.usta)}, ${u.soni} ta</span><b>${pul(u.tushum)}</b></div>`).join('')||'<div class="empty">Ma\'lumot yo\'q.</div>'}</div><a class="btn" style="display:block;margin-top:12px" href="/api/eksport">Excel uchun yuklab olish (CSV)</a><div class="card danger-zone" style="margin-top:12px"><h2>Tarixni tozalash</h2><p>Barcha xizmat tarixi va mijozlar ro'yxati butunlay o'chadi. Bu amalni ortga qaytarib bo'lmaydi.</p><button class="btn danger" onclick="tozala()">Hammasini tozalash</button></div>`}
+  $('#hs').innerHTML=`<div class="grid"><div class="card accent"><small>Bugun</small><div class="n oil">${pul(h.bugun.tushum)}</div><small>${h.bugun.soni} ta xizmat</small></div><div class="card accent"><small>Shu oy</small><div class="n">${pul(h.oy.tushum)}</div><small>${h.oy.soni} ta xizmat</small></div></div><div class="card" style="margin-top:12px"><h2>Oxirgi 14 kun</h2>${chart(h.kunlik,'sana')}</div><div class="card" style="margin-top:12px"><h2>Oylar bo'yicha</h2>${chart(h.oylik,'oy')}</div><div class="card" style="margin-top:12px"><h2>Ustalar (shu oy)</h2>${h.ustalar.map(u=>`<div class="tr"><span>${esc(u.usta)}, ${u.soni} ta</span><b>${pul(u.tushum)}</b></div>`).join('')||'<div class="empty">Ma\'lumot yo\'q.</div>'}</div><a class="btn" style="display:block;margin-top:12px" href="/api/eksport">Excel uchun yuklab olish (CSV)</a><div class="card danger-zone" style="margin-top:12px"><h2>Tarixni tozalash</h2><p>Barcha xizmat tarixi va mijozlar ro'yxati butunlay o'chadi. Bu amalni ortga qaytarib bo'lmaydi.</p><button class="btn danger" onclick="tozala()">Hammasini tozalash</button></div>`}
 async function tozala(){
   if(!confirm("Barcha xizmat tarixi va mijozlar ro'yxati o'chiriladi. Davom etasizmi?"))return;
   await act(async()=>{await api('tozala',{});toast('Tarix tozalandi');await hisobot();await yangila()})}
@@ -130,6 +137,10 @@ $('#mj-list').onclick=e=>act(async()=>{
   h.innerHTML=`<small>Telefon: ${esc(j.mijoz.telefon)||'yozilmagan'}</small>`+j.tarix.map(x=>`<div class="tr"><span>${x.sana.slice(0,10)}, ${x.km} km, ${esc(x.moy)}${x.filtr?', filtr':''}</span><b class="oil">${pul(x.summa)}</b></div>`).join('')});
 $('#s-saqla').onclick=()=>act(async()=>{await api('sozlama',{servis:$('#s-servis').value,oraliq_km:+$('#s-km').value,oraliq_kun:+$('#s-kun').value});toast('Saqlandi');await yangila()});
 $('#u-qosh').onclick=()=>act(async()=>{await api('usta',{login:$('#u-login').value,parol:$('#u-parol').value});$('#u-login').value='';$('#u-parol').value='';toast('Usta qo\'shildi');await sozlamaOl()});
+$('#sms-hammaga').onclick=()=>act(async()=>{
+  const j=await api('sms/yubor',{});
+  toast(j.soni?`${j.yuborildi}/${j.soni} ta mijozga SMS yuborildi`:'Eslatma kerak bo\'lgan mijoz yo\'q');
+  await yangila()});
 document.querySelector('nav').onclick=e=>{const b=e.target.closest('button');const t=b&&b.dataset.t;if(!t)return;
   document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));b.classList.add('on');$('#s-'+t).classList.add('on');
   act(async()=>{if(t=='mj')await qidir();if(t=='hs')await hisobot();if(t=='sz')await sozlamaOl();if(t=='esl')await yangila()})};
