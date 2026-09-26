@@ -2,12 +2,14 @@ import sqlite3, secrets, os, hashlib, csv, io
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 PAPKA = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(PAPKA, "moy_baza.db")
 sessiyalar = {}
 app = FastAPI()
+app.mount("/icons", StaticFiles(directory=os.path.join(PAPKA, "icons")), name="icons")
 
 
 def db():
@@ -99,6 +101,16 @@ class UstaLogin(BaseModel):
 @app.get("/")
 def bosh():
     return FileResponse(os.path.join(PAPKA, "index.html"))
+
+
+@app.get("/manifest.json")
+def manifest():
+    return FileResponse(os.path.join(PAPKA, "manifest.json"), media_type="application/manifest+json")
+
+
+@app.get("/sw.js")
+def sw():
+    return FileResponse(os.path.join(PAPKA, "sw.js"), media_type="application/javascript")
 
 
 @app.post("/api/login")

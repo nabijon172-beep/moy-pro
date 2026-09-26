@@ -2,6 +2,13 @@
 <html lang="uz"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0D0F13"><title>Moy servisi</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/favicon.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Moy Xizmati">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;650;800&display=swap" rel="stylesheet">
@@ -178,4 +185,5 @@ document.querySelector('nav').onclick=e=>{const b=e.target.closest('button');con
   document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));b.classList.add('on');$('#s-'+t).classList.add('on');
   act(async()=>{if(t=='mj')await qidir();if(t=='hs')await hisobot();if(t=='sz')await sozlamaOl();if(t=='esl')await yangila()})};
 act(yangila).then(()=>{if($('#app').hidden)show(false)});setInterval(()=>{if(!$('#app').hidden)act(yangila)},60000);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
    </script><script src="/ombor.js"></script></body></html>
