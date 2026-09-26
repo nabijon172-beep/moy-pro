@@ -86,6 +86,46 @@ def kirim(b: Kirim, request: Request):
     return {"ok": True}
 
 
+class TovarTahrir(BaseModel):
+    id: int
+    nom: str
+    birlik: str = "dona"
+    qoldiq: float
+    tannarx: float
+
+class TovarId(BaseModel):
+    id: int
+
+
+@app.post("/api/tovar/tahrirla")
+def tovar_tahrirla(b: TovarTahrir, request: Request):
+    ega(request)
+    nom = b.nom.strip()
+    if len(nom) < 2:
+        raise HTTPException(400, "Tovar nomi juda qisqa")
+    if b.qoldiq < 0 or b.tannarx < 0:
+        raise HTTPException(400, "Qoldiq va tannarxni to'g'ri kiriting")
+    with db() as c:
+        try:
+            n = c.execute("update tovar set nom=?, birlik=?, qoldiq=?, tannarx=? where id=?",
+                          (nom, b.birlik.strip() or "dona", b.qoldiq, b.tannarx, b.id)).rowcount
+        except sqlite3.IntegrityError:
+            raise HTTPException(400, "Bunday nomli tovar allaqachon bor")
+    if not n:
+        raise HTTPException(404, "Tovar topilmadi")
+    return {"ok": True}
+
+
+@app.post("/api/tovar/ochir")
+def tovar_ochir(b: TovarId, request: Request):
+    ega(request)
+    with db() as c:
+        n = c.execute("delete from tovar where id=?", (b.id,)).rowcount
+    if not n:
+        raise HTTPException(404, "Tovar topilmadi")
+    return {"ok": True}
+
+
 @app.post("/api/xizmat2")
 def xizmat2(b: Xizmat2, request: Request):
     u = kim(request)
