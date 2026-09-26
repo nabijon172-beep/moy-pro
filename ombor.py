@@ -5,11 +5,19 @@ from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 from server import app, db, kim, ega, norm, hesh, sozlama_ol_c, PAPKA
 
+import sms
+
 with db() as c:
     c.executescript("""
     create table if not exists tovar(id integer primary key, nom text unique, birlik text, qoldiq real default 0, tannarx real default 0);
     create table if not exists sarf(id integer primary key, xizmat_id integer, tovar_id integer, miqdor real, tannarx_sum real);
     """)
+    try:
+        c.execute("alter table xizmat add column chek_tok text")
+    except sqlite3.OperationalError:
+        pass  # ustun allaqachon bor
+    for row in c.execute("select id from xizmat where chek_tok is null"):
+        c.execute("update xizmat set chek_tok=? where id=?", (secrets.token_urlsafe(8), row["id"]))
 
 
 class Sarf(BaseModel):
@@ -142,8 +150,9 @@ def xizmat2(b: Xizmat2, request: Request):
                   (r, b.rusum.strip(), b.ism.strip(), b.telefon.strip()))
         nk = b.km + int(s["oraliq_km"])
         ns = (now + timedelta(days=int(s["oraliq_kun"]))).strftime("%Y-%m-%d")
-        cur = c.execute("insert into xizmat(raqam,sana,km,moy,filtr,summa,usta,keyingi_km,keyingi_sana) values(?,?,?,?,?,?,?,?,?)",
-                        (r, now.isoformat(timespec="seconds"), b.km, b.moy.strip(), int(b.filtr), b.summa, u["login"], nk, ns))
+        tok = secrets.token_urlsafe(8)
+        cur = c.execute("insert into xizmat(raqam,sana,km,moy,filtr,summa,usta,keyingi_km,keyingi_sana,chek_tok) values(?,?,?,?,?,?,?,?,?,?)",
+                        (r, now.isoformat(timespec="seconds"), b.km, b.moy.strip(), int(b.filtr), b.summa, u["login"], nk, ns, tok))
         xid = cur.lastrowid
         for sf in b.sarflar:
             if sf.miqdor <= 0:
@@ -186,6 +195,25 @@ def parol_almashtir(b: Parol, request: Request):
     return {"ok": True}
 
 
+def _chek_sahifa(x, sarflar, servis):
+    e = lambda s: html.escape(str(s or ""))
+    jami = "{:,}".format(x["summa"]).replace(",", " ")
+    sana = x["sana"][:16].replace("T", " ")
+    filtr = ", filtr almashtirildi" if x["filtr"] else ""
+    qismlar = ""
+    if sarflar:
+        qatorlar = "".join(f'<div class="r"><span>{e(r["nom"])}</span><span>{r["miqdor"]} {e(r["birlik"])}</span></div>' for r in sarflar)
+        qismlar = f'<hr><p><b>Ishlatilgan ehtiyot qismlar:</b></p>{qatorlar}'
+    return f"""<!doctype html><meta charset="utf-8"><title>Chek</title>
+<style>body{{font:14px monospace;max-width:300px;margin:16px auto}}h3,p{{margin:4px 0}}hr{{border:0;border-top:1px dashed #000}}.r{{display:flex;justify-content:space-between}}</style>
+<h3>{e(servis)}</h3><p>{e(sana)}</p><hr>
+<p>Mashina: {e(x["raqam"])} {e(x["rusum"])}</p><p>Mijoz: {e(x["ism"])}</p><p>Km: {x["km"]}</p>
+<p>Moy: {e(x["moy"])}{filtr}</p>{qismlar}<hr>
+<div class="r"><b>Jami:</b><b>{jami} so'm</b></div><hr>
+<p>Keyingi almashtirish: {x["keyingi_km"]} km yoki {e(x["keyingi_sana"])}</p><p>Rahmat!</p>
+<script>print()</script>"""
+
+
 @app.get("/chek/{xid}")
 def chek(xid: int, request: Request):
     kim(request)
@@ -194,23 +222,41 @@ def chek(xid: int, request: Request):
         if not x:
             raise HTTPException(404, "Xizmat topilmadi")
         servis = sozlama_ol_c(c)["servis"]
-        sarflar = c.execute("""select t.nom, s.miqdor, t.birlik from sarf s join tovar t on t.id=s.tovar_id
-                               where s.xizmat_id=?""", (xid,)).fetchall()
-    e = lambda s: html.escape(str(s or ""))
-    jami = ("%d" % x["summa"])
-    jami = "{:,}".format(x["summa"]).replace(",", " ")
-    sana = x["sana"][:16].replace("T", " ")
-    filtr = ", filtr almashtirildi" if x["filtr"] else ""
-    qismlar = ""
-    if sarflar:
-        qatorlar = "".join(f'<div class="r"><span>{e(r["nom"])}</span><span>{r["miqdor"]} {e(r["birlik"])}</span></div>' for r in sarflar)
-        qismlar = f'<hr><p><b>Ishlatilgan ehtiyot qismlar:</b></p>{qatorlar}'
-    sahifa = f"""<!doctype html><meta charset="utf-8"><title>Chek</title>
-<style>body{{font:14px monospace;max-width:300px;margin:16px auto}}h3,p{{margin:4px 0}}hr{{border:0;border-top:1px dashed #000}}.r{{display:flex;justify-content:space-between}}</style>
-<h3>{e(servis)}</h3><p>{e(sana)}</p><hr>
-<p>Mashina: {e(x["raqam"])} {e(x["rusum"])}</p><p>Mijoz: {e(x["ism"])}</p><p>Km: {x["km"]}</p>
-<p>Moy: {e(x["moy"])}{filtr}</p>{qismlar}<hr>
-<div class="r"><b>Jami:</b><b>{jami} so'm</b></div><hr>
-<p>Keyingi almashtirish: {x["keyingi_km"]} km yoki {e(x["keyingi_sana"])}</p><p>Rahmat!</p>
-<script>print()</script>"""
-    return HTMLResponse(sahifa)
+        sarflar = c.execute("select t.nom, s.miqdor, t.birlik from sarf s join tovar t on t.id=s.tovar_id where s.xizmat_id=?",
+                            (xid,)).fetchall()
+    return HTMLResponse(_chek_sahifa(x, sarflar, servis))
+
+
+@app.get("/chek/pub/{tok}")
+def chek_pub(tok: str):
+    """Mijoz SMS orqali olgan havola bilan (login talab qilinmaydi) chekni ko'radi."""
+    with db() as c:
+        x = c.execute("select x.*, m.ism, m.rusum from xizmat x left join mijoz m on m.raqam=x.raqam where x.chek_tok=?",
+                      (tok,)).fetchone()
+        if not x:
+            raise HTTPException(404, "Chek topilmadi")
+        servis = sozlama_ol_c(c)["servis"]
+        sarflar = c.execute("select t.nom, s.miqdor, t.birlik from sarf s join tovar t on t.id=s.tovar_id where s.xizmat_id=?",
+                            (x["id"],)).fetchall()
+    return HTMLResponse(_chek_sahifa(x, sarflar, servis))
+
+
+class SmsChek(BaseModel):
+    xid: int
+
+
+@app.post("/api/sms/chek")
+def sms_chek_yubor(b: SmsChek, request: Request):
+    kim(request)
+    with db() as c:
+        x = c.execute("""select x.chek_tok, x.summa, m.telefon, m.ism from xizmat x
+                         left join mijoz m on m.raqam=x.raqam where x.id=?""", (b.xid,)).fetchone()
+    if not x:
+        raise HTTPException(404, "Xizmat topilmadi")
+    if not x["telefon"]:
+        raise HTTPException(400, "Bu mijozning telefon raqami yo'q")
+    havola = f"{str(request.base_url).rstrip('/')}/chek/pub/{x['chek_tok']}"
+    matn = (f"Hurmatli {x['ism'] or 'mijoz'}, xizmat bajarildi, jami {'{:,}'.format(x['summa']).replace(',', ' ')} so'm. "
+            f"Chek: {havola}")
+    xabar, ok = sms.yubor(x["telefon"], matn)
+    return {"natija": xabar, "ok": ok}

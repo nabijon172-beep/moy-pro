@@ -41,11 +41,16 @@ $('#sf-qosh').onclick=()=>act(async()=>{
 $('#sf-list').onclick=e=>{const i=e.target.dataset.x;if(i!==undefined){e.preventDefault();sarf.splice(+i,1);sarfChiz()}};
 
 $('#f-saqla').onclick=()=>act(async()=>{
+  const telBor=!!$('#f-tel').value.trim();
   const j=await api('xizmat2',{raqam:$('#f-raqam').value,rusum:$('#f-rusum').value,ism:$('#f-ism').value,telefon:$('#f-tel').value,km:+$('#f-km').value,moy:$('#f-moy').value,filtr:$('#f-filtr').checked,summa:+$('#f-sum').value,sarflar:sarf.map(s=>({tovar_id:s.tovar_id,miqdor:s.miqdor}))});
   ['#f-raqam','#f-rusum','#f-ism','#f-tel','#f-km','#f-sum','#f-moy'].forEach(s=>$(s).value='');$('#f-filtr').checked=false;sarf=[];sarfChiz();
   toast('Saqlandi. Keyingi almashtirish: '+j.keyingi_km+' km yoki '+j.keyingi_sana);
-  $('#chek-link').innerHTML=`<a class="btn sec" style="display:block" href="/chek/${j.id}" target="_blank">Chek chiqarish</a>`;
+  $('#chek-link').innerHTML=`<a class="btn sec" style="display:block" href="/chek/${j.id}" target="_blank">Chek chiqarish</a>`+
+    (telBor?`<button class="btn sec" style="display:block;width:100%;margin-top:8px" data-xid="${j.id}" id="chek-sms">SMS orqali chek yuborish</button>`:'');
   await yangila()});
+$('#chek-link').onclick=e=>{
+  if(e.target.id!=='chek-sms')return;
+  act(async()=>{const r=await api('sms/chek',{xid:+e.target.dataset.xid});toast(r.ok?'Mijozga SMS yuborildi':r.natija)})};
 
 $('#t-qosh').onclick=()=>act(async()=>{await api('tovar',{nom:$('#t-nom').value,birlik:$('#t-bir').value});$('#t-nom').value='';$('#t-bir').value='';toast('Tovar qo\'shildi');await tovarYukla()});
 $('#k-saqla').onclick=()=>act(async()=>{await api('kirim',{tovar_id:+$('#k-tovar').value,miqdor:+$('#k-miq').value,narx:+$('#k-narx').value});$('#k-miq').value='';$('#k-narx').value='';toast('Kirim saqlandi');await tovarYukla()});
